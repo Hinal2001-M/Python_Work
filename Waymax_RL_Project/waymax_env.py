@@ -36,15 +36,17 @@ class WaymaxRLWrapper(gym.Env):
         if self._collision():
             reward -= 10.0
             done = True
+            info['collision'] = True
 
         self.t += 1
         if self.t >= 100:
             done = True
-            reward += 20.0  # success reward
+            reward += 20.0
+            info['success'] = True  
 
-        reward += 1.0  # step reward
+        reward += 1.0  
         obs = self._get_obs()
-        return obs, reward, done, truncated, info  #gymnasium format
+        return obs, reward, done, truncated, info  
 
     def _gen_agent(self):
         return {

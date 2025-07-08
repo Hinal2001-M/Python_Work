@@ -1,60 +1,47 @@
-# eval.py
 from stable_baselines3 import PPO
 from waymax_env import WaymaxRLWrapper
-import numpy as np
 
+# Path to your trained model and scenario
+scenario_path = "path/to/scenario.tfrecord"
+model_path = "ppo_waymax"
+
+# Load environment and model
 env = WaymaxRLWrapper()
-model = PPO.load("ppo_waymax_model")
+model = PPO.load(model_path)
 
-episodes = 10
+# Evaluation settings
+episodes = 11
 successes = 0
-collisions = 0
+collisions = 2
 
 for ep in range(episodes):
     obs, _ = env.reset()
     done = False
+    print(f"\nEpisode {ep + 1} started...")
+
     while not done:
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _, info = env.step(action)
+        obs, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
 
-        if reward < -5:
-            collisions += 1
-            break
-    if reward > 0:
-        successes += 1
+        if done:
+            if info.get("collision"):
+                print("Collision occurred.")
+                collisions += 1
+            elif info.get("success"):
+                print("Reached goal successfully.")
+                successes += 1
+            else:
+                print("Episode ended without success or collision.")
 
-print(f"Success rate: {successes}/{episodes}")
-print(f"Collisions: {collisions}/{episodes}")
+# Calculate percentages
+success_rate = (successes / episodes) * 100
+collision_rate = (collisions / episodes) * 100
 
-
-
-
-
-
-
-
-
-
-# from stable_baselines3 import PPO
-# from waymax_env import WaymaxRLWrapper
-# import numpy as np
-
-# env = WaymaxRLWrapper("path/to/scenario.tfrecord")
-# model = PPO.load("ppo_waymax")
-
-# successes = 0
-# collisions = 0
-# episodes = 20
-
-# for _ in range(episodes):
-#     obs = env.reset()
-#     done = False
-#     while not done:
-#         action, _ = model.predict(obs, deterministic=True)
-#         obs, reward, done, info = env.step(action)
-
-#         if info.get('collision'): collisions += 1
-#         if info.get('success'): successes += 1
-
-# print(f"Success Rate: {successes/episodes*100:.2f}%")
-# print(f"Collision Rate: {collisions/episodes*100:.2f}%")
+# Final results
+print("\nEvaluation Summary")
+print(f"Total Episodes: {episodes}")
+print(f"Successes: {successes}")
+print(f"Collisions: {collisions}")
+print(f"Success Rate: {success_rate:.1f}%")
+print(f"Collision Rate: {collision_rate:.1f}%")
